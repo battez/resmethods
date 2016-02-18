@@ -7,13 +7,14 @@
 %    Workbook: StudentMarks.xls
 %    Worksheet: Sheet
 
+%
 % Import the data
 [~, ~, raw] = xlsread('StudentMarks.xls','Sheet1','A2:A82');
 
 % store our data
 marks = reshape([raw{:}],size(raw));
 
-% Clear temporary variables / figures
+% Clear  variables / figures
 clearvars raw;
 close all; 
 
@@ -25,53 +26,36 @@ n = length(marks);
 
 %
 % 1 - plot histogram showing shape of dist. of 81 students.
-% -- we will compare two histograms by overlaying
-%
-%  
+% -- we will compare two histograms with subplot.
 figure;
+subplot(1, 2, 1)
 
-% range chosen for simple divisibility and clarity and 
-% including all data (i.e. outliers too)
-% bin_width = (max(marks) - min(marks)) / 20
-disp('min and max')
-min(marks)
-max(marks)
+% range chosen for simple divisibility, clarity and 
+% including all data (i.e. outliers as well); bin width = 5.
+hist_range = min(marks):5:100; % set upper range as 100 for divisibility
+h = histogram(marks, hist_range);
 
-% NB use ceil to always have enough bins to include all data
-hist_range = min(marks):5:max(marks);
-bins = 1:20;
-h = hist(marks, 5*bins)
+% tidy up the display of the figure:
+title({'Distribution Shape,'; 'Sample of 81 Students'})
+xlabel('Marks'); ylabel('No. Students'); ylim([0 30]);
+set(h, 'facecolor', [0 1 0]);
 
-return
-set(h,'facecolor', [0 1 0], 'FaceAlpha', 0.9);
+% alternative histogram bin choice
+% Scott method: 3.5*std(marks(:))*n^(-1/3).
+subplot(1, 2, 2)
+j = histogram(marks, 'BinMethod', 'scott');
 
-
-figure;
-% alternative histogram bin choice, overlaid
-% Freedman-Diaconis for normal dists and outlier-friendly:
-
-bin_width = ceil(iqr(marks) / nthroot(n, 3))
-% bin_width = 2*IQR(X(:))*numel(X)^(-1/3)
-hist_range = min_range:bin_width:max_range;
-
-j = histogram(marks, 'BinMethod','fd')
-set(j,'facecolor',[0 0 1], 'FaceAlpha', 0.5);
+% tidy up the display of the figure:
+title({'With Bin Range Of Scott Method,'; 'Sample of 81 Students'})
+xlabel('Marks'); ylabel('No. Students'); ylim([0 30]);
+set(j, 'facecolor', [0 0 1]);
 
 
-
-% tidy up the display of the histogram:
-title({'Distribution Shape for n=81,'; 'Sample of Student Marks'})
-xlabel('Mark')
-ylabel('Frequency')
-ylim([0 20])
-
-ax = gca;
-ax.XTick = [0:5:100];
 
 
 % 2 - summary statistics
 % sample mean: sum(marks)/n
-mean_value = mean(marks)
+mu = mean(marks)
 
 % sample variance: sum((marks-mean_value).^2 /(n-1))
 variance = var(marks)
@@ -79,39 +63,77 @@ variance = var(marks)
 % sample std: sqrt(sum((marks-mean_value).^2 /(n-1)))
 standard_deviation = std(marks)
 
-% q3 - sampling
+
+
+% 3 - Random Sampling Means
 % take 1000 rand samples size 10 from sample
-n_sub = 40; % number in each subsample
-max_samples = 1000; % max number of samples to take
+n_sub = 10; % number in each subsample
+random_sets = 1000; % max number of samples to take
 Means = []; % store our means here
 
 % calculate mean of each
-for times = 1:max_samples
+for times = 1:random_sets
+    
+    y = randsample(marks, n_sub, true);
+    
+    mu = mean(y)
+    
+    if(times == 5); Means; return
+    end;
+  
+    % append to our Means vector
+    Means = [Means mu]
+
+end;
+std(Means)
+% plot histogram of this sampling distribution
+figure;
+subplot(1, 2, 1)
+xlimit = [40 90];
+hist_sub = histogram(Means, 20);
+xlabel('Means');ylabel('Frequency');xlim(xlimit);
+set(hist_sub, 'facecolor', [1 1 0]);
+
+title(strcat('Sampling Distribution: ', sep, ...
+    num2str(random_sets), ' Random Samples of', ...
+    sep, num2str(n_sub)));
+
+%
+% 4 - repeat step 3 with larger sample
+%
+n_sub = 40; 
+More_Means = [];
+
+% calculate mean of each
+for times = 1:random_sets
     
     y = randsample(marks, n_sub, true);
     
     mu = mean(y);
   
     % append to our Means vector
-    Means = [Means mu];
+    More_Means = [More_Means mu];
 
 end;
+std(More_Means)
+subplot(1, 2, 2)
+hist_sub_more = histogram(More_Means, 20);
+xlabel('Means');ylabel('Frequency');xlim(xlimit);
+set(hist_sub_more, 'facecolor', [0 1 1]);
 
-% plot hist of this sampling distribution
-figure;
-title(strcat('Plotting subsamples of ', sep, num2str(n_sub)));
-hsub = histogram(Means, 20);
-set(hsub,'facecolor',[0 1 0]);
+title(strcat('Sampling Distribution: ', sep, ...
+    num2str(random_sets), ' Random Samples of', ...
+    sep, num2str(n_sub)));
 
 disp('exiting')
 return
 
-mumu = mean(Means)
-stdmu = std(Means)
-varmu = var(Means)
+%%%HANDY!!!
+% ax = gca;
+% ax.XTick = [0:4:100];
 
-title( strcat( 'Mean of', SEP, num2str(m), SEP, ... 
-    'sample means:', SEP, num2str(mumu) ) );
+
+
 
 % Q6: calculate n
 N = 2000;
