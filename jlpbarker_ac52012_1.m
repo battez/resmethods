@@ -11,26 +11,52 @@
 [~, ~, raw] = xlsread('StudentMarks.xls','Sheet1','A2:A82');
 
 % store our data
-ArandomsampleofstudentsMarks81 = reshape([raw{:}],size(raw));
-marks = ArandomsampleofstudentsMarks81;
+marks = reshape([raw{:}],size(raw));
 
 % Clear temporary variables / figures
 clearvars raw;
-% close all; 
+close all; 
 
-% some convenient vars:
-sep = {' '}; % string separator
+% for convenience: string separator
+sep = {' '}; 
+
+% our sample size
 n = length(marks);
 
+%
+% 1 - plot histogram showing shape of dist. of 81 students.
+% -- we will compare two histograms by overlaying
+%
+%  
+figure;
+
+% range chosen for simple divisibility and clarity and 
+% including all data (i.e. outliers too)
+% bin_width = (max(marks) - min(marks)) / 20
 
 
-% 1 - plot histogram showing shape of dist. of 81 students. 
-min_range = 0;
-max_range = 100; 
-figure(1);
-h = histogram(marks, min_range:5:max_range)
+% NB use ceil to always have enough bins to include all data
+hist_range = min(marks):5:max(marks);
+bins = 1:20;
+h = hist(marks, 5*bins)
 
-set(h,'facecolor',[1 0 0]);
+return
+set(h,'facecolor', [0 1 0], 'FaceAlpha', 0.9);
+
+
+figure;
+% alternative histogram bin choice, overlaid
+% Freedman-Diaconis for normal dists and outlier-friendly:
+
+bin_width = ceil(iqr(marks) / nthroot(n, 3))
+% bin_width = 2*IQR(X(:))*numel(X)^(-1/3)
+hist_range = min_range:bin_width:max_range;
+
+j = histogram(marks, 'BinMethod','fd')
+set(j,'facecolor',[0 0 1], 'FaceAlpha', 0.5);
+
+
+
 % tidy up the display of the histogram:
 title({'Distribution Shape for n=81,'; 'Sample of Student Marks'})
 xlabel('Mark')
@@ -39,6 +65,7 @@ ylim([0 20])
 
 ax = gca;
 ax.XTick = [0:5:100];
+
 
 % 2 - summary statistics
 % sample mean: sum(marks)/n
@@ -69,7 +96,7 @@ for times = 1:max_samples
 end;
 
 % plot hist of this sampling distribution
-figure(2);
+figure;
 title(strcat('Plotting subsamples of ', sep, num2str(n_sub)));
 hsub = histogram(Means, 20);
 set(hsub,'facecolor',[0 1 0]);
